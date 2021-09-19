@@ -17,11 +17,11 @@ Target case study: Proof of concept for getting a product name and current price
 #### How to run the program locally:
 1. Run below to spin up both mongodb and api service
    ```
-    docker compose up
+    ./run
     ```
 2. Navigate to http://localhost:8080/swagger-ui.html
 
-#### How to run the program in debug mode:
+#### How to run the program in debug mode or just the api service in IDE
 1. Comment out this section in docker-compose.yaml file where api is specified
    ```  
    api:
@@ -34,8 +34,9 @@ Target case study: Proof of concept for getting a product name and current price
 2. Point spring profile to debug
 3. Run below to spin up mongodb
    ```
-    docker compose up
+    docker compose up 
    ```
+   You can include `--remove-orphans` if you've already ran script `./run` previously
 4. Using terminal or your choice of IDE, run in debug mode   
 5. Navigate to http://localhost:8080/swagger-ui.html
 

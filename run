@@ -1,0 +1,2 @@
+./gradlew bootBuildImage --imageName=casestudy-myretail
+docker compose up --remove-orphans
