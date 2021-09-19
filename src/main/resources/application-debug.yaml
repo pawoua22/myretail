@@ -1,0 +1,13 @@
+redsky:
+  url:
+    product:
+      path: https://redsky.target.com/v3/pdp/tcin/{id}?excludes=taxonomy,price,promotion,bulk_ship,rating_and_review_reviews,rating_and_review_statistics,question_answer_statistics&key=candidate#_blank
+
+spring:
+  data:
+    mongodb:
+      host: 0.0.0.0
+      port: 27017
+      database: sample_myretail
+      username: root
+      password: root

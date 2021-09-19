@@ -1,0 +1,22 @@
+package com.casestudy.myretail.exception;
+
+import lombok.Data;
+import org.springframework.http.HttpStatus;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Data
+public class ApiResponseError {
+
+    private HttpStatus status;
+    private String message;
+    private List<String> errors;
+
+    public ApiResponseError(HttpStatus status, String message, String error) {
+        super();
+        this.status = status;
+        this.message = message;
+        this.errors = Arrays.asList(error);
+    }
+}
