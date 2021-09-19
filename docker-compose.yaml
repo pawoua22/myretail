@@ -12,9 +12,9 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
   # comment out below to run in debug mode in IDE
-#  api:
-#    image: casestudy-myretail
-#    ports:
-#      - 8080:8080
-#    links:
-#      - mongo
+  api:
+    image: casestudy-myretail
+    ports:
+      - 8080:8080
+    links:
+      - mongo
