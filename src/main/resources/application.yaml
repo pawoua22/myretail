@@ -6,6 +6,7 @@ redsky:
 spring:
   data:
     mongodb:
+      #uri: mongodb://productapi:<>@ec2-18-217-184-177.us-east-2.compute.amazonaws.com/sample_myretail
       host: mongo
       port: 27017
       database: sample_myretail

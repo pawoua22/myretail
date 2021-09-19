@@ -29,7 +29,8 @@ Target case study: Proof of concept for getting a product name and current price
     ports:
       - 8080:8080
     links:
-      - mongo```
+      - mongo
+   ```
 2. Point spring profile to debug
 3. Run below to spin up mongodb
    ```

@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.DecimalMin;
+import javax.validation.ValidationException;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -53,7 +53,25 @@ public class ProductController {
     @Operation(description = "Update a product current USD price")
     @PutMapping(value = "/{id}/price", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Product> updateProduct(@PathVariable @Min(1) int id, @RequestBody @NotNull BigDecimal price) {
+        if (price.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("Price must be equal to or greater than $0.00");
+        }
+        ItemModel redskyProduct = redskyService.getItemInfo(Integer.toString(id));
+        if (redskyProduct == null || StringUtils.isEmpty(redskyProduct.getProductId())) {
+            throw new NotFoundException("Product "+id+" not found");
+        }
 
-        return ResponseEntity.ok().body(null);
+        ItemPriceModel itemPriceModel = itemPriceRepository.findByItemIdAndCurrency(id, "USD")
+                .orElse(new ItemPriceModel(id, price,"USD"));
+        if (itemPriceModel.get_id() != null) {
+            log.info("Updating product {} price from ${} -> ${}", id, itemPriceModel.getValue(), price);
+            itemPriceModel.setValue(price);
+        } else {
+            log.info("Adding new item price {}", itemPriceModel);
+        }
+        itemPriceRepository.save(itemPriceModel);
+        return ResponseEntity.ok().body(new Product(redskyProduct.getProductId(),
+                                            redskyProduct.getProductName(),
+                                            new ItemPrice(itemPriceModel)));
     }
 }

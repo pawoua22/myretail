@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import javax.validation.ValidationException;
+
 @ControllerAdvice
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -16,6 +18,16 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 ex.getLocalizedMessage(),
                 "Resource not found");
+
+        return new ResponseEntity<>(error, new HttpHeaders(), error.getStatus());
+    }
+
+    @ExceptionHandler({ ValidationException.class})
+    public ResponseEntity<Object> handleValidation(Exception ex) {
+        ApiResponseError error = new ApiResponseError(
+                HttpStatus.BAD_REQUEST,
+                ex.getLocalizedMessage(),
+                "Error occurred");
 
         return new ResponseEntity<>(error, new HttpHeaders(), error.getStatus());
     }
