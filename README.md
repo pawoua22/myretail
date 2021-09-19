@@ -37,8 +37,26 @@ Target case study: Proof of concept for getting a product name and current price
     docker compose up 
    ```
    You can include `--remove-orphans` if you've already ran script `./run` previously
-4. Using terminal or your choice of IDE, run in debug mode   
+4. Using terminal or your choice of IDE, run in debug mode
 5. Navigate to http://localhost:8080/swagger-ui.html
+
+#### How to run unit tests
+1. Comment out this section in docker-compose.yaml file where api is specified
+   ```  
+   api:
+    image: casestudy-myretail
+    ports:
+      - 8080:8080
+    links:
+      - mongo
+   ```
+2. Point spring profile to test
+3. Run below to spin up mongodb
+   ```
+    docker compose up 
+   ```
+   You can include `--remove-orphans` if you've already ran script `./run` previously
+4. Run test suite
 
 
 ## Author
