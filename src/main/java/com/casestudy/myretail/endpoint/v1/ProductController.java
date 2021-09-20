@@ -13,11 +13,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.ValidationException;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Slf4j
@@ -51,8 +52,14 @@ public class ProductController {
     }
 
     @Operation(description = "Update a product current USD price")
-    @PutMapping(value = "/{id}/price", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Product> updateProduct(@PathVariable @Min(1) int id, @RequestBody @NotNull BigDecimal price) {
+    @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Product> updateProduct(@PathVariable int id,
+                                                 @RequestBody @Valid Product product,
+                                                 BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            throw new ValidationException(bindingResult.getAllErrors().toString());
+        }
+        BigDecimal price = product.getCurrent_price().getValue();
         if (price.compareTo(BigDecimal.ZERO) < 0) {
             throw new ValidationException("Price must be equal to or greater than $0.00");
         }

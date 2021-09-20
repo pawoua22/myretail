@@ -1,6 +1,8 @@
 package com.casestudy.myretail.endpoint.v1;
 
 import com.casestudy.myretail.domain.ItemPriceModel;
+import com.casestudy.myretail.endpoint.v1.dto.ItemPrice;
+import com.casestudy.myretail.endpoint.v1.dto.Product;
 import com.casestudy.myretail.repository.ItemPriceRepository;
 import com.casestudy.myretail.service.ItemModel;
 import com.casestudy.myretail.service.RedskyService;
@@ -12,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -58,7 +61,7 @@ public class ProductControllerTest {
     }
 
     @Test
-    public void testProductNotFound() throws Exception {
+    public void testGetProductNotFound() throws Exception {
 
         when(redskyService.getItemInfo(anyString())).thenReturn(null);
         mockMvc.perform(get(API_PRODUCT_PATH+"/{id}", 1)
@@ -69,7 +72,7 @@ public class ProductControllerTest {
     }
 
     @Test
-    public void testProductFound_HappyPath() throws Exception {
+    public void testGetProductFound_HappyPath() throws Exception {
 
         when(redskyService.getItemInfo(anyString())).thenReturn(itemModel);
         when(itemPriceRepository.findByItemIdAndCurrency(anyInt(), anyString())).thenReturn(Optional.of(itemPriceModel));
@@ -86,7 +89,7 @@ public class ProductControllerTest {
     }
 
     @Test
-    public void testProductFoundButNoPricingAvailable() throws Exception {
+    public void testGetProductFoundButNoPricingAvailable() throws Exception {
         when(redskyService.getItemInfo(anyString())).thenReturn(itemModel);
         when(itemPriceRepository.findByItemIdAndCurrency(anyInt(), anyString())).thenReturn(Optional.empty());
 
@@ -102,7 +105,7 @@ public class ProductControllerTest {
 
     @Test
     public void testPutProductPriceInvalidNoPriceRequest() throws Exception {
-        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}/price", 1)
+        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}", 1)
                 .contentType(APPLICATION_JSON)
                 .content(""))
                 .andExpect(status().is4xxClientError())
@@ -114,11 +117,15 @@ public class ProductControllerTest {
 
     @Test
     public void testPutProductNegativePriceInvalidPriceRequest() throws Exception {
-
-        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}/price", 123456)
+        ObjectMapper mapper = new ObjectMapper();
+        ItemPrice price = new ItemPrice();
+        price.setValue(new BigDecimal(-2.30));
+        price.setCurrency_code("USD");
+        Product product = new Product("123456", "Product 123456", price);
+        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}", 123456)
                 .contentType(APPLICATION_JSON)
-                .content(new BigDecimal(-2.30).toString()))
-                .andExpect(status().is4xxClientError())
+                .content(mapper.writeValueAsString(product)))
+                .andExpect(status().is4xxClientError());
         ;
         verify(redskyService, times(0)).getItemInfo(anyString());
         verify(itemPriceRepository, times(0)).findByItemIdAndCurrency(anyInt(), anyString());
@@ -127,12 +134,19 @@ public class ProductControllerTest {
 
     @Test
     public void testPutProductPrice_product_doesnot_exist() throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        ItemPrice price = new ItemPrice();
+        price.setValue(new BigDecimal(-2.30));
+        price.setCurrency_code("USD");
+        Product product = new Product("123456", "Product 123456", price);
+
         when(redskyService.getItemInfo(anyString())).thenReturn(null);
         when(itemPriceRepository.findByItemIdAndCurrency(anyInt(), anyString())).thenReturn(Optional.empty());
 
-        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}/price", 123456)
+        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}", 123456)
                     .contentType(APPLICATION_JSON)
-                    .content(new BigDecimal(-2.30).toString()))
+                    .content(mapper.writeValueAsString(product)))
                     .andExpect(status().is4xxClientError())
         ;
         verify(itemPriceRepository, times(0)).findByItemIdAndCurrency(anyInt(), anyString());
@@ -140,36 +154,67 @@ public class ProductControllerTest {
     }
 
     @Test
+    public void testPutProductPrice_no_price_request() throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+        Product product = new Product("123456", "Product 123456", null);
+
+        when(redskyService.getItemInfo(anyString())).thenReturn(null);
+        when(itemPriceRepository.findByItemIdAndCurrency(anyInt(), anyString())).thenReturn(Optional.empty());
+
+        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}", 123456)
+                .contentType(APPLICATION_JSON)
+                .content(mapper.writeValueAsString(product)))
+                .andExpect(status().is4xxClientError())
+        ;
+        verify(itemPriceRepository, times(0)).findByItemIdAndCurrency(anyInt(), anyString());
+        verify(itemPriceRepository, times(0)).save(any());
+    }
+
+    @Test
     public void testPutProductPrice_InsertNewData() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ItemPrice price = new ItemPrice();
+        price.setValue(new BigDecimal(2.30));
+        price.setCurrency_code("USD");
+        Product product = new Product("123456", "Product 123456", price);
+
         when(redskyService.getItemInfo(anyString())).thenReturn(itemModel);
         when(itemPriceRepository.findByItemIdAndCurrency(anyInt(), anyString())).thenReturn(Optional.empty());
-        BigDecimal newPrice = new BigDecimal(2.30);
-        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}/price", 123456)
+        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}", 123456)
                 .contentType(APPLICATION_JSON)
-                .content(newPrice.toString()))
+                .content(mapper.writeValueAsString(product)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.id").value(123456))
                 .andExpect(jsonPath("$.name").value("Product 123456"))
-                .andExpect(jsonPath("$.current_price.value").value(newPrice))
+                .andExpect(jsonPath("$.current_price.value").value(price.getValue()))
                 .andExpect(jsonPath("$.current_price.currency_code").value("USD"))
         ;
+        verify(itemPriceRepository, times(1)).save(any());
+
     }
 
     @Test
     public void testPutProductPrice_UpdateData() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ItemPrice price = new ItemPrice();
+        price.setValue(new BigDecimal(2.30));
+        price.setCurrency_code("USD");
+        Product product = new Product("123456", "Product 123456", price);
+
         when(redskyService.getItemInfo(anyString())).thenReturn(itemModel);
         when(itemPriceRepository.findByItemIdAndCurrency(anyInt(), anyString())).thenReturn(Optional.of(itemPriceModel));
-        BigDecimal newPrice = new BigDecimal(2.34);
-        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}/price", 123456)
+        mockMvc.perform(put(API_PRODUCT_PATH+"/{id}", 123456)
                 .contentType(APPLICATION_JSON)
-                .content(newPrice.toString()))
+                .content(mapper.writeValueAsString(product)))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.id").value(123456))
                 .andExpect(jsonPath("$.name").value("Product 123456"))
-                .andExpect(jsonPath("$.current_price.value").value(newPrice))
+                .andExpect(jsonPath("$.current_price.value").value(price.getValue()))
                 .andExpect(jsonPath("$.current_price.currency_code").value("USD"))
         ;
 
-        assertEquals(newPrice.toString(), itemPriceModel.getValue().toString());
+        assertEquals(price.getValue().toString(), itemPriceModel.getValue().toString());
+        verify(itemPriceRepository, times(1)).save(any());
     }
 }
